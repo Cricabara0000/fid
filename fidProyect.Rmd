@@ -18,3 +18,7 @@ library(usethis)
 edit_git_config()
 use_git()
 ```
+
+```{r}
+ggplot2
+```
