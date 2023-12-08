@@ -5,20 +5,89 @@ date: "2023-11-27"
 output: pdf_document
 ---
 
+## Lectura del conjunto de datos
+
 ```{r}
 hepatitis<-read.csv("hepatitis_csv.csv", header = TRUE,sep=",") 
 head(hepatitis)
 ```
 
-## 
+## Análisis de los datos
 
 ```{r}
-install.packages("usethis")
-library(usethis)
-edit_git_config()
-use_git()
+#Resumen estadístico de los datos
+summary(hepatitis)
 ```
 
 ```{r}
-ggplot2
+str(hepatitis)
+```
+
+```{r}
+#Función que calcula el número de valores faltantes de cada variable del conjunto de datos hepatitis.
+valores_faltantes <- sapply(hepatitis, function(x) sum(is.na(x)))
+#Dataframe con el número de valores faltantes por variable del conjunto de datos.
+print(valores_faltantes)
+#Valores faltantes del todo el conjunto de datos
+print(sum(valores_faltantes))
+```
+
+```{r}
+#Definición de una función para obtener únicamente las variables numéricas para poder realizar un análisis. 
+#Esta función almacena en un dataframe las variables numéricas del conjunto de datos
+
+extraer_variables_numericas <- function(data) {
+  datos_numericos <- data[, sapply(data, is.numeric)]
+  return(datos_numericos)
+}
+
+# Llamar a la función con tu conjunto de datos 'hepatitis'
+variables_numericas <- extraer_variables_numericas(hepatitis)
+
+summary(variables_numericas)
+```
+
+## Limpieza de datos
+
+```{r}
+
+```
+
+## Matriz de correlación antes de selección
+
+```{r}
+# ES NECESARIO TENER UN DATAFRAME CON TODO VALORES NUMÉRICOS EN ESTA VARIABLE: datos_numericos
+
+
+#Calcular la matriz de correlación con los datos imputados
+matriz_correlacion_1 <- cor(datos_numericos)
+
+# Mostrar la matriz de correlación
+print(matriz_correlacion_1)
+```
+
+## Selección de atributos
+
+```{r}
+
+```
+
+## Selección de ejemplos
+
+```{r}
+
+```
+
+## Matriz de correlacion después de selecciones
+
+```{r}
+# ES NECESARIO TENER UN DATAFRAME CON TODO VALORES NUMÉRICOS EN ESTA VARIABLE: datos_numericos
+
+
+#Calcular la matriz de correlación con los datos imputados
+matriz_correlacion_2 <- cor(datos_numericos)
+
+# Mostrar la matriz de correlación
+print(matriz_correlacion_2)
+
 ```
