@@ -4,11 +4,11 @@ author: "ccabello"
 date: "2023-11-27"
 output: pdf_document
 ---
+
 ```{r}
 hepatitis<-read.csv("hepatitis_csv.csv", header = TRUE,sep=",") 
 head(hepatitis)
 ```
-
 
 ## 
 
@@ -18,5 +18,3 @@ library(usethis)
 edit_git_config()
 use_git()
 ```
-
-
