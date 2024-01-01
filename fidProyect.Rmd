@@ -1,7 +1,7 @@
 ---
-title: "fid"
-author: "ccabello"
-date: "2023-11-27"
+title: "Análisis de datos hepáticos"
+author: "Julia García Flores, Cristian Antonio Cabello Arango, Paula Yuan César Aguilar, Pablo Santos, Juan María Sojo"
+date: "-08-01-2024"
 output: pdf_document
 ---
 
@@ -14,6 +14,14 @@ head(hepatitis)
 
 ## Análisis de los datos
 
+Lo primero que realizaremos será fijar una semilla para controlar la aletoriedad, si existiera, de algún algoritmo.
+
+```{r}
+set.seed(1)
+```
+
+A continuación, se muestra un breve descripción de cada uno de los atributos del conjunto de datos, así como una clasificación de dichas variables en función de su tipo (categóricas o numéricas):
+
 ```{r}
 #Resumen estadístico de los datos
 summary(hepatitis)
@@ -22,6 +30,54 @@ summary(hepatitis)
 ```{r}
 str(hepatitis)
 ```
+
+El conjunto de datos está compuesto por una vista minable de 20 atributos (variables) y 155 ejemplos (observaciones) cada atributo.
+
+Como podemos observar, los atributos o variables presentes en nuestro conjunto de datos, en función de su tipo (categóricas o numéricas), son las siguientes:
+
+1.  **age**: Variable numérica continua que representa la edad de los pacientes. La edad puede ser un factor en la severidad o susceptibilidad a ciertos tipos de hepatitis, por ejemplo, la hepatitis A tiende a ser menos severa en adultos pero más grave en niños.
+
+2.  **sex**: Variable categórica que indica el sexo de los pacientes. Según algunos estudios, en la respuesta inmune entre hombres y mujeres frente a la hepatitis es diferente, aunque estos efectos pueden variar dependiendo del tipo de hepatitis.
+
+3.  **steroid**: Variable categórica que indica si los pacientes recibieron esteroides o no como parte del tratamiento. El uso de esteroides puede influir en la efectividad del tratamiento de la enfermedad hepática.
+
+4.  **antivirals**: Variable categórica que indica si los pacientes recibieron tratamiento antiviral. El uso de medicamentos antivirales puede influir en la progresión de la enfermedad hepática.
+
+5.  **fatigue, malaise, anorexia, liver_big, liver_firm, spleen_palpable, spiders, ascites, varices, histology, class**: Todos estos atributos son variables categóricas que describen diferentes hallazgos físicos obtenidos de las pruebas realizadas sobre los pacientes. Estos hallazgos clínicos pueden indicar complicaciones asociadas con la hepatitis, como cirrosis, hipertensión portal o daño hepático avanzado. Además, proporcionan información detallada sobre el estado del tejido hepático, lo que puede ayudar a determinar la gravedad y la causa subyacente de la hepatitis.
+
+6.  **bilirubin, alk_phosphate, sgot, albumin, protime**: Todos estos atributos son variables numéricas continuas que representan diferentes resultados de pruebas médicas relacionados con la condición de los pacientes. Es decir, son indicativos del funcionamiento hepático y pueden ser utilizados para diagnosticar y monitorizar la hepatitis, ya que los niveles anormales pueden señalar la presencia y severidad de la enfermedad.
+
+Observando el dataset, nos damos cuenta de que todas las variables numéricas son continuas y que todas las variables categóricas, excepto la variable sex, son atributos de tipo Boolean, por ello, decidimos realizar una transformación de variables categóricas utilizando la siguiente técnica:
+
+### Codificación ordinal
+
+Para poder obtener un análisis más completo de este tipo de datos, decidimos realizar una transformación de variables de categóricas a numéricas discretas, es decir, las variables cuyo resultado sea True pasarán a ser el número 1 y, las variables cuyo resultado sea False, pasarán a ser el número 0. Estos atributos nos permitirán obtener una serie de gráficas más concretas que permitan mostrar la distribución de dichos atributos con otros.
+
+```{r}
+num_filas <- nrow(hepatitis)
+num_columnas <- ncol(hepatitis)
+# Recorremos todas las filas y columnas del DataFrame
+  for (i in 1:num_filas) {
+    for (j in 1:num_columnas) {
+      valor <- hepatitis[i, j]  # Obtenemos el valor en la fila 'i' y columna 'j'
+      # Realizamos la transformación: TRUE a 1 y FALSE a 0
+      if (!is.na(valor) && hepatitis[i, j]=="True") {
+        hepatitis[i, j] <- 1
+      }else if(!is.na(valor) && hepatitis[i, j]=="False"){
+        hepatitis[i, j] <- 0
+      }
+    }
+  }
+print(hepatitis)
+```
+
+Las variables que han sido transformadas de categóricas a numéricas discretas, a través de la codificación ordinal, son: 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_fig', 'spleen_palpable', 'spiders', 'ascites', 'varices' e 'histology'.
+
+Una vez tenemos el dataset transformado de forma más sencilla, decidimos proceder a realizar un análisis y limpieza de datos faltantes para poder obtener el conjunto de datos más completo posible y poder graficar los datos de una forma más representativa.
+
+### Análisis de datos faltantes
+
+A continuación, realizaremos una representación de la suma de valores faltantes en cada uno de los atributos presentes en el conjunto de datos:
 
 ```{r}
 #Función que calcula el número de valores faltantes de cada variable del conjunto de datos hepatitis.
@@ -32,62 +88,324 @@ print(valores_faltantes)
 print(sum(valores_faltantes))
 ```
 
-```{r}
-#Definición de una función para obtener únicamente las variables numéricas para poder realizar un análisis. 
-#Esta función almacena en un dataframe las variables numéricas del conjunto de datos
+Como podemos observar, la mayoría de atributos no continen datos faltantes en sus ejemplos, o tienen muy pocos, de hecho, el conjunto de datos contiene un total de 146 valores faltantes. Sin embargo, se observa que hay un atributo que contiene una gran cantidad de valores faltantes, el atributo "protime", con 67 valores faltantes. Seguido de este atributo, aparecen otros que también contienen un número de valores faltantes significativos que añaden "ruido" y desinformación al conjunto, estos atributos son "alk_phosphate" y "albumin" con 29 y 16 datos faltantes, respectivamente. En concreto:
 
-extraer_variables_numericas <- function(data) {
-  datos_numericos <- data[, sapply(data, is.numeric)]
-  return(datos_numericos)
+-   Los atributos'steroid', 'fatigue', 'anorexia', 'liver_big', 'liver_firm', 'spleen_palpable', 'spiders', 'ascites', 'varices', 'bilirubin', 'alk_phosphate', 'sgot', 'albumin', 'protime' tienen 1 o más valores faltantes.
+
+-   Los atributos 'age', 'sex', 'antivirals', 'histology', 'class' no tienen valores faltantes.
+
+Por ello, realizaremos un estudio para poder rellenar los datos en cada uno de los atributos que presentan datos faltantes.
+
+Según las técnicas de preprocesado de valores faltantes, tenemos varias opciones para aplicar en estos casos: eliminar las filas que contengan datos faltantes o rellenar los valores faltantes con propiedades estadísticas de cada uno de los atributos (media, mediana, moda, etc).
+
+```{r}
+# Calcular el porcentaje de valores nulos por atributo
+porcentaje_valores_nulos <- colSums(is.na(hepatitis)) / nrow(hepatitis) * 100
+
+# Mostrar el porcentaje de valores nulos por atributo
+print(porcentaje_valores_nulos)
+
+```
+
+Como podemos observar, el atributo 'protime' presenta un 43'2% de ejemplos nulos en su composición. Según la literatura, comúnmente, se considera eliminar atributos que tienen un alto porcentaje de valores faltantes, superando el umbral del 50%. Sin embargo, esto puede variar según el impacto del atributo en el análisis. En este caso, este atributo no representa una importancia significativa en el problema abordado pues, en su definición, el atributo representa una prueba médica sobre el funcionamiento hepático y en el conjunto de datos hay varias pruebas médicas más que representan lo mismo.
+
+```{r}
+mean_protime <- mean(hepatitis$protime, na.rm = TRUE)
+print(mean_protime)
+```
+
+El atributo 'protime' representa el tiempo de protrombina. La protrombina es una proteína producida por el hígado y es fundamental en el proceso de coagulación sanguínea. La prueba del tiempo de protrombina es un examen de sangre que mide el tiempo que tarda la porción líquida de la sangre (plasma) en coagularse. Niveles anormales pueden ser indicativos de enfermedad hepática. El tiempo de protrombina suele estar alrededor de 11 a 13.5 segundos.
+
+Sin embargo, el código anterior representa que el tiempo de protombina medio de 62 segundos, lo que corresponden a valores anormales en todos los ejemplos e indica que todas las pruebas de tiempo de protombina realizadas sobre los pacientes que forman el conjunto de datos no son significativas pues presentan valores anormales en su conjunto, por lo que, a priori, podemos afirmar que este atributo no presenta un impacto significativo en el conjunto de datos y, por ello, puede ser eliminado sin afectar a la información, el análisis e incluso las predicciones del problema.
+
+```{r}
+# Eliminar el atributo 'protime' del conjunto de datos 'hepatitis'
+hepatitis <- subset(hepatitis, select = -protime)
+
+# Mostrar la estructura del nuevo conjunto de datos sin 'protime'
+str(hepatitis)
+
+```
+
+Como se puede observar, ya se ha eliminado el atributo 'protime' por lo que el conjunto de datos pasa a estar compuesto por 19 variables.
+
+Para el resto de variables, realizaremos un estudio estadístico de los valores de cada atributo en función de su tipo, de la siguiente manera:
+
+1.  Para los atributos que han sido transformados de variables categóricas a valores discretos (de Boolean: True/False a Integer: 1/0) se realizará un estudio de todos sus ejemplos para rellenar los valores faltantes con el valor que más se presente en dicho atributo.
+
+    ```{r}
+    variables = c('steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_firm',
+                  'spleen_palpable', 'spiders', 'ascites', 'varices', 'histology')
+
+    # Cáalculo del recuento de valores faltantes para las variables discretas
+    for (variable in variables) {
+      cat(paste("Variable:", variable, "- Valores faltantes:", sum(is.na(hepatitis[[variable]])), "\n"))
+    }
+
+    ```
+
+    A continuación, se realizará un recuento de cuántos ejemplos contienen un número uno (son True) y cuántos ejemplos contienen un cero (son False) para rellenar los ejemplos faltantes con el valor que más se repita en cada atributo. Recordamos que las variables que han sido transformadas de categóricas a numéricas discretas son: 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_fig', 'spleen_palpable', 'spiders', 'ascites', 'varices' e 'histology'.
+
+```{r}
+for (variable in variables) {
+  cat("Variable:", variable, "\n")
+  tabla <- table(hepatitis[[variable]])
+  cat("Recuento de 0s:", tabla[1], "\n")
+  cat("Recuento de 1s:", tabla[2], "\n\n")
+}
+```
+
+Como podemos observar, la mayoría de atributos están representados en casi su totalidad por unos o por ceros, por ejemplo, el atributo 'spleen_palpable' está representado en su mayoría por unos, por lo que los valores faltantes de dicho atributo podría ser sustituidos por un uno. Sin embargo, el atributo 'steroid' está representado casi por la misma cantidad de ceros que de unos por lo que puede ser significativo modificar los valores nulos con el número que más se repita. Analizando resultados anteriores, se observa que, únicamente, hay un solo valor nulo en este atributo, por lo que se decide continuar con la decisión de rellenar los valores nulos de los atributos numéricos con el valor que más se repita.
+
+```{r}
+# Lista de variables para imputar valores faltantes
+variables <- c('steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_firm',
+               'spleen_palpable', 'spiders', 'ascites', 'varices', 'histology')
+
+# Bucle para cada variable
+for (variable in variables) {
+  # Contar el número de unos y ceros en la columna 'variable'
+  count_uno <- sum(hepatitis[[variable]] == 1, na.rm = TRUE)
+  count_cero <- sum(hepatitis[[variable]] == 0, na.rm = TRUE)
+  
+  # Determinar el valor más alto (mayor)
+if (count_uno > count_cero) {
+    cat(paste("El valor más alto para", variable, "es 1 (unos)\n"))
+    hepatitis[[variable]][is.na(hepatitis[[variable]])] <- 1
+  } else {
+    cat(paste("El valor más alto para", variable, "es 0 (ceros)\n"))
+    hepatitis[[variable]][is.na(hepatitis[[variable]])] <- 0
+  }
 }
 
-# Llamar a la función con tu conjunto de datos 'hepatitis'
-variables_numericas <- extraer_variables_numericas(hepatitis)
-
-summary(variables_numericas)
+sapply(hepatitis[variables], function(x) sum(is.na(x)))
+head(hepatitis[variables])
 ```
 
-## Limpieza de datos
+Como se puede observar, todos los valores faltantes de las variables numéricas discretas han sido reemplazados correctamente por el número que más se repite entre todos los ejemplos de cada atributo (variable).
+
+2.  Para los valores numéricos continuos, se realizará un estudio estadístico de la media y la mediana que nos permita decidir cuál de estos estadísticos es el más apropiados para reemplazar los valores nulos de dichos atributos. Los atributos numéricos continuos de nuestro conjunto de datos son los siguientes: 'age', 'bilirubin', 'alk_phosphate', 'sgot' y 'albumin'. A continuación, realizaremos el estudio estadístico de la media y la mediana de los atributos 'bilirubin', 'alk_phosphate', 'sgot' y 'albumin' para decidir con qué valores reemplazamos los valores faltantes.
 
 ```{r}
+# Lista de variables continuas
+variables_continuas <- c('age', 'bilirubin', 'alk_phosphate', 'sgot', 'albumin')
+
+# Bucle para calcular la media y la mediana de los valores que no son faltantes
+for (variable_c in variables_continuas) {
+  mean_value <- mean(hepatitis[[variable_c]], na.rm = TRUE)
+  median_value <- median(hepatitis[[variable_c]], na.rm = TRUE)
+  
+  cat(paste("Variable:", variable_c, "\n"))
+  cat(paste("Valores faltantes:", sum(is.na(hepatitis[[variable_c]])), "\n"))
+  cat(paste("Media:", mean_value, "\n"))
+  cat(paste("Mediana:", median_value, "\n\n"))
+}
 
 ```
 
-## Matriz de correlación antes de selección
+Por una parte, el atributo 'age' no contiene valores faltantes en ninguno de sus ejemplos, por lo que no es necesario realizar este análisis para dicho atributo.
+
+Por otra parte, los atributos 'bilirubin' y 'albumin' no presentan mucha diferencia entre la media y la mediana, por lo que se podría elegir cualquier estadístico para reemplazar los valores faltantes de estos atributos. En nuestro caso, observando el conjunto de datos, decidimos utilizar la media (redondeada con dos decimales pues así están los valores en el conjunto de datos) para reemplazar los valores faltantes de estos dos atributos pues presenta un resultado continuo más preciso.
+
+Sin embargo, los atributos 'alk_phosphate' y 'sgot' sí presentan mucha diferencia entre la media y la mediana, por lo que habría que recurrir al conjunto de datos y a la definición de cada atributo para poder decidir qué estadístico utilizar para reemplazar los valores faltantes.
+
+El atributo 'alk_phosphate' representa el nivel de fosfatasa alcalina en el suero del paciente. Los valores elevados de fosfatasa alcalina suelen ser común en enfermedades hepáticas. El rango de valores normales para un adulto suele oscilar entre 20 y 140 unidades/litro. En este caso, tanto la media como la mediana están dentro del rango de valores normales de nivel de fosfatasa alcalina en suero, por lo que elegir un estadístico u otro no debería representar ninguna diferencia significativa a la hora de reemplazar los valores faltantes con alguno de estos valores. Por ello, decidimos reemplazar los valores faltantes de este atributo con la mediana pues es el valor que se representa el valor de la variable en su posición central.
+
+El atributo 'sgot' representa el nivel de enzimas hepáticas (aspartato aminotransferasas) en el suero del paciente. Los valores normales suelen estar en el rango de 10 a 40 unidades/litro en personas adultas. En este caso, ambos valores están fuera del rango de valores normales, por lo que, la elección del estadístico podría representar un resultado significativo a la hora de reemplazar los valores faltantes de este atributo. Sin embargo, dicho atributo, únicamente presenta cuatro valores faltantes en su conjunto. Por ello, se decide utilizar la mediana como estadístico para reemplazar los valores faltantes de este atributo pues, además, se acerca más al rango de valores normales que la media.
+
+Como podemos observar, para la variable 'sex' no ha sido necesario realizar un análisis de valores faltantes pues carece de ellos. En otras palabras, el atributo contiene valores en todos sus ejemplos.
+
+A continuación, realizaremos el reemplazo de los valores faltantes de estos atributos numéricos continuos:
 
 ```{r}
-# ES NECESARIO TENER UN DATAFRAME CON TODO VALORES NUMÉRICOS EN ESTA VARIABLE: datos_numericos
+# Calcular la media de 'bilirubin' y 'albumin' redondeada a dos decimales
+mean_bilirubin <- round(mean(hepatitis$bilirubin, na.rm = TRUE), 2)
+mean_albumin <- round(mean(hepatitis$albumin, na.rm = TRUE), 2)
 
+# Reemplazar valores faltantes en 'bilirubin' y 'albumin' con la media redondeada
+hepatitis$bilirubin[is.na(hepatitis$bilirubin)] <- mean_bilirubin
+hepatitis$albumin[is.na(hepatitis$albumin)] <- mean_albumin
 
-#Calcular la matriz de correlación con los datos imputados
-matriz_correlacion_1 <- cor(datos_numericos)
+# Calcular la mediana de 'alk_phosphate' y 'sgot'
+median_alk_phosphate <- median(hepatitis$alk_phosphate, na.rm = TRUE)
+median_sgot <- median(hepatitis$sgot, na.rm = TRUE)
 
-# Mostrar la matriz de correlación
-print(matriz_correlacion_1)
+# Reemplazar valores faltantes en 'alk_phosphate' y 'sgot' con la mediana
+hepatitis$alk_phosphate[is.na(hepatitis$alk_phosphate)] <- median_alk_phosphate
+hepatitis$sgot[is.na(hepatitis$sgot)] <- median_sgot
+
 ```
+
+El conjunto de datos tras esta parte del procesamiento queda resultante de la siguiente manera:
+
+```{r}
+print(hepatitis)
+```
+
+### Visualización
+
+A continuación se muestra una serie de gráficas que permitan representar un análisis exploratorio sobre la distribución de cada una de estas varibles así como la distribución entre varios atributos.
+
+```{r}
+library(ggplot2)
+variables_discretas <- c('steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_firm',
+               'spleen_palpable', 'spiders', 'ascites', 'varices', 'histology')
+
+# Crear gráficos de barras para cada variable discreta
+for (variable_fd in variables_discretas) {
+  # Contar la frecuencia de cada valor en la columna
+  freq_table <- table(hepatitis[[variable_fd]])
+  
+  # Convertir la tabla de frecuencias a un dataframe
+  freq_df <- as.data.frame(freq_table)
+  names(freq_df) <- c(variable_fd, "Frequency")
+  
+  # Graficar el gráfico de barras
+ p <- ggplot(freq_df, aes(x = !!as.name(variable_fd), y = Frequency, fill = !!as.name(variable_fd))) +
+    geom_bar(stat = "identity") +
+    labs(title = paste("Distribución de", variable_fd)) +
+    xlab(variable_fd) +
+    ylab("Frecuencia") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 1))
+ print(p)
+}
+
+```
+
+Como se puede observar, los gráficos representan la distribución de los valores numéricos discretos.
+
+Por un lado, las gráficas de las variables 'steroid', 'fatigue', 'malaise', 'liver_firm', 'spiders', 'ascites', e 'histology' parecen que están balanceadas pues presentan valores similares de unos y de ceros, por ejemplo, la variable 'steroid' presenta casi el mismo número de unos que de ceros, siendo la variable mejor distribuida y, por lo tanto, la que mejor balanceo presenta.
+
+Por otro lado, las gráficas de las variables 'antivirals', 'anorexia', 'liver_big', 'spleen_palpable' y 'varices' parecen que están desbalanceadas pues presentan más valores de una categoría que de otra, por ejemplo, las variables 'antivirals' y 'varices' presentan más ceros que de unos, siendo las variables que presentan el peor balanceo de todas las variables numéricas discretas.
+
+```{r}
+# Lista de variables continuas
+variables_continuas <- c('age', 'bilirubin', 'alk_phosphate', 'sgot', 'albumin')
+
+# Crear gráficos de densidad con líneas para cada variable continua
+for (variable_fc in variables_continuas) {
+  # Crear el gráfico de densidad
+  p <- ggplot(hepatitis, aes_string(x = variable_fc)) +
+    geom_density(color = "blue") +
+    labs(title = paste("Distribución de", variable_fc, "con densidad")) +
+    xlab(variable_fc) +
+    ylab("Densidad") +
+    theme_minimal()
+  print(p)
+}
+
+```
+
+Realizando un análisis de la distribución de estas gráficas que representan las variables numéricas continuas, podemos observar que las escalas son diferentes entre ellas, de hecho, la variable 'histology' encuentra sus valores dentro del rango [2-6,5] aproximadamente, la variable 'sgot' encuentra sus valores dentro del rango [0-650], la variable 'alk_phosphate' encuentra sus valores dentro del rango [0-300], la variable 'bilirubin' encuentra sus valores dentro del rango [0-8] y la variable 'age' encuentra sus valores dentro del rango [0-80], aproximadamente.
+
+Además, podemos observar que las variables 'age' y 'albumin' representan una gráfica similar a la distribución estadística normalizada en la que la mayoría de datos se distribuyen en el centro. El resto de variables están más distribuidas a la izquierda de la gráfica.
+
+```{r}
+ggplot(hepatitis, aes(x = class)) +
+  geom_bar(fill = "skyblue", color = "black") +
+  labs(title = "Distribución de la variable 'class'",
+       x = "Clase",
+       y = "Frecuencia") +
+  theme_minimal()
+```
+
+Como podemos observar, la variable dependiente 'class' está desbalanceada, esto significa que la distribución de los ejemplos dentro de esa variable no es uniforme, es decir, hay una gran diferencia en el número de observaciones entre las categorías 'die' y 'live'. Estas categorías infican si el paciente vive o muere por la hepatitis. En este caso, la categoría 'live' contiene más de tres veces más de ejemplos que la categoría 'die'.
+
+El desbalance en los datos puede afectar el rendimiento de los modelos de aprendizaje automático, especialmente en algoritmos que son sensibles a la distribución de clases, ya que pueden tener dificultades para aprender patrones de las clases minoritarias.
+
+Por ello, optamos por realizar una selección de atributos para balancear la variable dependiente y predictora 'class' y seleccionar los atributos que presenten resultados más significativos para realizar un estudio de entrenamientos de modelos.
 
 ## Selección de atributos
 
+Para realizar la selección de atributos, todas las variables deben ser numéricas. El problema consiste en que la variable 'sex' y la variable 'class' son variables categóricas. Las categorías de la variable 'sex' son female y male, indicando el sexo del paciente y las categorías de la variable 'class' son die y live, indicando si el paciente muere o vive a la enfermedad de hepatitis. Como se observa, las variables tienen, únicamente, dos categorías, por lo que se podrían transformar a valores binarios, ceros y unos, pero las variables numéricas discretas fueron transformadas de categóricas booleanas a binarias.
+
+Sin embargo, según la literatura, el hecho de que el resto de las variables tengan valores binarios (0 y 1) no es necesariamente un problema en sí mismo ya que el conjuntos de datos puede tener varias variables binarias que representan diferentes características o condiciones sin representar problemas significativos.
+
+Por ello, vamos a realizar la transformación a variables binarias estas variables categóricas discretas para poder obtener la matriz de correlación.
+
 ```{r}
+# Transformar 'class' a variables binarias (0 y 1)
+hepatitis$class <- ifelse(hepatitis$class == 'die', 0, 1)
+
+# Transformar 'sex' a variables binarias (0 y 1)
+hepatitis$sex <- ifelse(hepatitis$sex == 'female', 0, 1)
+
+# Verificar los cambios en 'class' y 'sex'
+head(hepatitis[c('class', 'sex')])
 
 ```
+
+La transformación de las variables categóricas a variables numéricas discretas ha resultado de la siguiente manera:
+
+Variable 'class': live -\> 1 , die -\> 0.
+
+Variable 'sex': male -\> 1, female -\> 0.
+
+Esta transformación, además, consigue que todas las variables discretas estén normalizadas entre sí.
+
+A continuación, se muestra la matriz de correlación y la gráfica que representa la correlación entre todas las variables.
+
+```{r}
+#install.packages("corrplot")
+library(corrplot)
+# Convertir todas las variables a tipo numérico
+hepatitis <- sapply(hepatitis, function(x) as.numeric(as.character(x)))
+
+# Verificar la estructura y tipos de datos después de la conversión
+str(hepatitis)
+
+# Calcular la matriz de correlación solo con las variables numéricas
+correlation_matrix <- cor(hepatitis)
+
+# Visualizar la matriz de correlación
+print(correlation_matrix)
+
+# Ajustar la visualización del mapa de calor
+corrplot(correlation_matrix, method = "color",addCoef.col = "black", tl.col = "black", tl.srt = 45, tl.cex = 0.7, number.cex = 0.4, mar = c(1,1,1,1))
+
+
+```
+
+En principio, podemos deducir que no están muy correlacionadas. Casi todas las variables se encuentran rondando valores menores que 0.5 excepto las variables 'fatigue'-'malaise' y 'malaise'-'anorexia'. Con respecto a la correlación con la variable dependiente (predictora), casi todas las variables presentan mala correlación, porque tienen un valor negativo, debajo de cero, de hecho, las variables 'age', 'fatigue', 'malaise', 'spleen-palpable', 'spiders', 'ascites', 'anorexia', 'varices', 'bilirubin' e 'histology' son los que peores datos presentan pues los valores se acercan a -0.5. Estas variables podrían ser eliminadas porque no muestran resultados significativos con la variable dependiente, además, tampoco muestran evidencias significativas de correlación entre el resto de las variables independientes, sin embargo, como las variables 'fatigue', 'malaise' y 'anorexia' presentan valores altos de correlación, no se deberían eliminar. Además, teniendo en cuenta la distribución de las variables, las variables 'spleen_palpable' y 'varices' están muy desbalanceadas. Recordando la distribución de las variables numéricas discretas y la correlación, en general, de las variables 'antivirals', 'anorexia', 'liver_big' con el resto de variables no presenta resultados significativos. Por ello, se decide eliminar las variables 'age','spleen-palpable', 'spiders', 'ascites', 'varices', 'bilirubin', 'antivirals', 'anorexia', 'liver_big' e 'histology'.
+
+```{r}
+# Seleccionar las variables que deseas mantener
+hepatitis <- subset(hepatitis, select = -c(age, spleen_palpable, spiders, ascites, varices, bilirubin, antivirals, anorexia, liver_big, histology))
+
+# Verificar la estructura del nuevo conjunto de datos
+str(hepatitis)
+
+```
+
+El conjunto de datos se reduce de 19 atributos a 9 atributos en su totalidad. Esta selección de atributos permitirá que los resultados del estudio sean más precisos y fiables.
 
 ## Selección de ejemplos
 
+En este caso, como el conjunto de datos presenta un tamaño de 155 atributos. Como no es un tamaño demasiado grande como para eliminar ejemplos para obtener una mayor relevancia en el conjunto, se decide no realizar este paso en este estudio.
+
+## Normalización
+
 ```{r}
 
 ```
 
-## Matriz de correlacion después de selecciones
+## División del conjunto de datos (K-fold)
 
 ```{r}
-# ES NECESARIO TENER UN DATAFRAME CON TODO VALORES NUMÉRICOS EN ESTA VARIABLE: datos_numericos
-
-
-#Calcular la matriz de correlación con los datos imputados
-matriz_correlacion_2 <- cor(datos_numericos)
-
-# Mostrar la matriz de correlación
-print(matriz_correlacion_2)
 
 ```
+
+## Regresión
+
+```{r}
+
+```
+
+## Clasificación
+
+```{r}
+
+```
+
+## Resultados
