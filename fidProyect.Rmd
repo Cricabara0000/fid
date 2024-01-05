@@ -419,8 +419,171 @@ hepatitis_reduced_norm
 
 ## Clasificación
 
-```{r}
+En este punto evaluaremos diferentes modelos, dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
+- Algoritmo ZeroR
+- Regresión logística
+- Maquinas de soporte vectorial
+- Random Forest
+- KNN
+Para cada uno de ellos calcularemos las siguientes métricas: 
+- Precisión.
+- Error.
+- AUC.
+- R2.
 
+Mediante estas métricas evaluaremos cuál de los modelos de clasificación proporciona un mejor rendimiento para el dataset del problema, en primer lugar realizaremos esta evaluación con el dataset completo ya preprocesado y con los datos numéricos normalizados.
+
+```{r}
+# Instalar y cargar las librerías necesarias si no están instaladas
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+if (!requireNamespace("e1071", quietly = TRUE)) {
+  install.packages("e1071")
+}
+if (!requireNamespace("randomForest", quietly = TRUE)) {
+  install.packages("randomForest")
+}
+if (!requireNamespace("pROC", quietly = TRUE)) {
+  install.packages("pROC")
+}
+
+library(caret)
+library(e1071)
+library(randomForest)
+library(pROC)
+
+# Convertir la variable objetivo en factor para problemas de clasificación
+hepatitis_norm$class <- as.factor(hepatitis_norm$class)
+
+# Definir el esquema de validación cruzada con k=5
+control <- trainControl(method = "cv", number = 5)
+
+# Lista de modelos de clasificación a probar con validación cruzada
+modelos_clasificacion <- list(
+  "ZeroR" = train(class ~ ., data = hepatitis_norm, method = "knn", trControl = control),
+  "Regresión Logística" = train(class ~ ., data = hepatitis_norm, method = "glm", trControl = control),
+  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_norm, method = "svmRadial", trControl = control),
+  "Random Forest" = train(class ~ ., data = hepatitis_norm, method = "rf", trControl = control),
+  "K Vecinos más cercanos (KNN)" = train(class ~ ., data = hepatitis_norm, method = "knn", trControl = control)
+)
+
+# Función para calcular el R cuadrado
+calculate_r_squared <- function(model, test_data) {
+  predictions <- predict(model, newdata = test_data)
+  rsquared <- cor(predictions, test_data$class)^2
+  return(rsquared)
+}
+
+# Realizar experimentos con cada modelo y almacenar los resultados en un data frame
+resultados_clasificacion <- data.frame(Modelo = character(), 
+                                       Precisión = numeric(), 
+                                       Error = numeric(),
+                                       AUC = numeric(),
+                                       R2 = numeric(),
+                                       stringsAsFactors = FALSE)
+
+for (nombre_modelo in names(modelos_clasificacion)) {
+  modelo <- modelos_clasificacion[[nombre_modelo]]
+  
+  # Precisión (Accuracy) y Error
+  predicciones <- predict(modelo, newdata = hepatitis_norm)
+  accuracy <- mean(predicciones == hepatitis_norm$class)
+  error <- 1 - accuracy
+  
+  # AUC y curva ROC
+    roc_obj <- multiclass.roc(as.factor(hepatitis_norm$class), 
+                              as.numeric(predict(modelo, newdata = hepatitis_norm, type = "raw")))
+    auc <- auc(roc_obj)
+  
+  # R cuadrado
+  rsquared <- cor(as.numeric(as.character(predicciones)), as.numeric(as.character(hepatitis_norm$class)))^2
+  
+  resultados_clasificacion[nombre_modelo, ] <- c(nombre_modelo, accuracy, error, auc, rsquared)
+}
+
+# Mostrar los resultados
+print(resultados_clasificacion)
 ```
+Viendo estos resultados el modelo Random Forest tiene los mejores resultados, unos resultados "perfectos", aunque esto no es así, esto se debe a que, al ser un dataset en el que la clase positiva y la clase negativa están bastante desequilibradas, siempre está prediciendo la clase mayoritaria, obteniendo métricas de alto rendimiento pero sin aprender realmente patrones de los datos.
+Por ello, el modelo que mejor rendimiento presenta para nuestro dataset es el de Máquinas de Vector soporte (SVM).
+
+A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5, pero esta vez con el dataset reducido, para comprobar si ha valido la pena la selección de atributos o si en este caso no era necesario.
+
+```{r}
+# Instalar y cargar las librerías necesarias si no están instaladas
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+if (!requireNamespace("e1071", quietly = TRUE)) {
+  install.packages("e1071")
+}
+if (!requireNamespace("randomForest", quietly = TRUE)) {
+  install.packages("randomForest")
+}
+if (!requireNamespace("pROC", quietly = TRUE)) {
+  install.packages("pROC")
+}
+
+library(caret)
+library(e1071)
+library(randomForest)
+library(pROC)
+
+# Convertir la variable objetivo en factor para problemas de clasificación
+hepatitis_reduced_norm$class <- as.factor(hepatitis_reduced_norm$class)
+
+# Definir el esquema de validación cruzada con k=5
+control <- trainControl(method = "cv", number = 5)
+
+# Lista de modelos de clasificación a probar con validación cruzada
+modelos_clasificacion <- list(
+  "ZeroR" = train(class ~ ., data = hepatitis_reduced_norm, method = "knn", trControl = control),
+  "Regresión Logística" = train(class ~ ., data = hepatitis_reduced_norm, method = "glm", trControl = control),
+  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_reduced_norm, method = "svmRadial", trControl = control),
+  "Random Forest" = train(class ~ ., data = hepatitis_reduced_norm, method = "rf", trControl = control),
+  "K Vecinos más cercanos (KNN)" = train(class ~ ., data = hepatitis_reduced_norm, method = "knn", trControl = control)
+)
+
+# Función para calcular el R cuadrado
+calculate_r_squared <- function(model, test_data) {
+  predictions <- predict(model, newdata = test_data)
+  rsquared <- cor(predictions, test_data$class)^2
+  return(rsquared)
+}
+
+# Realizar experimentos con cada modelo y almacenar los resultados en un data frame
+resultados_clasificacion <- data.frame(Modelo = character(), 
+                                       Precisión = numeric(), 
+                                       Error = numeric(),
+                                       AUC = numeric(),
+                                       R2 = numeric(),
+                                       stringsAsFactors = FALSE)
+
+for (nombre_modelo in names(modelos_clasificacion)) {
+  modelo <- modelos_clasificacion[[nombre_modelo]]
+  
+  # Precisión (Accuracy) y Error
+  predicciones <- predict(modelo, newdata = hepatitis_reduced_norm)
+  accuracy <- mean(predicciones == hepatitis_reduced_norm$class)
+  error <- 1 - accuracy
+  
+  # AUC y curva ROC
+    roc_obj <- multiclass.roc(as.factor(hepatitis_reduced_norm$class), 
+                              as.numeric(predict(modelo, newdata = hepatitis_reduced_norm, type = "raw")))
+    auc <- auc(roc_obj)
+  
+  # R cuadrado
+  rsquared <- cor(as.numeric(as.character(predicciones)), as.numeric(as.character(hepatitis_reduced_norm$class)))^2
+  
+  resultados_clasificacion[nombre_modelo, ] <- c(nombre_modelo, accuracy, error, auc, rsquared)
+}
+
+# Mostrar los resultados
+print(resultados_clasificacion)
+```
+Con el dataset reducido tras la selección de atributos, los resultados son muy parecidos, incluso peores que con el dataset completo para algunos modelos, el Random Forest sigue prediciendo siempre la clase mayoritaria sin aprender realmente patrones de los datos, y el SVM sigue siendo el modelo con mayor precisión, y que evaluando todas las métricas en conjunto mejor rendimiento proporciona para nuestro problema.
+Por lo tanto podemos decir que no merece la pena hacer la selección de atributos y utilizar un dataset reducido para este problema en concreto, aunque es una técnica que si que puede ser de gran utilidad en otros problemas.
+
 
 ## Resultados
