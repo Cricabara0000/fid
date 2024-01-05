@@ -413,9 +413,214 @@ hepatitis_reduced_norm
 
 ## Regresión
 
+En este punto evaluaremos la capacidad de diferentes modelos de precedir valores a partir de datos previos, que serán tomados dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
+- Regresión lineal
+- Random Forest
+- KNN regresivo
+Para cada uno de ellos calcularemos las siguientes métricas: 
+- El error cuadrático medio.
+- La raíz del error cuadrático medio.
+- El error absoluto medio.
+- R2.
+
+Mediante estas métricas evaluaremos cuál de los modelos de regresión proporciona un mejor rendimiento para el dataset del problema.
+
+En primer lugar realizaremos esta evaluación con el dataset completo ya preprocesado y con los datos numéricos normalizados:
+
 ```{r}
 
+# Se realiza en primer lugar la regresión lineal
+# La variable dependiente será el sexo y las independientes el resto
+modelo <- lm(sex ~ ., data = hepatitis_norm)
+
+# Se muestran los coeficientes, p-valores y estadísticas de ajuste:
+summary(modelo)
+
+# El coeficiente de determinación (R2)
+summary_modelo <- summary(modelo)
+print(paste("R2:", summary_modelo$r.squared))
+
 ```
+
+```{r}
+# Cargando la librería randomForest
+library(randomForest)
+
+# Utilizaremos albumin como variable objetivo
+data<-hepatitis_norm
+
+# Entrenar el modelo Random Forest
+# Supongamos que queremos predecir el consumo de combustible (mpg) usando las otras variables
+set.seed(123)
+rf_model <- randomForest(albumin ~ ., data = hepatitis_norm)
+
+# Resumen del modelo
+print(rf_model)
+
+# Predicciones en los datos de entrenamiento
+predictions <- predict(rf_model, hepatitis_norm)
+
+actual_values <- hepatitis_norm$albumin
+
+# Puedes evaluar la calidad de las predicciones calculando:
+
+# El error cuadrático medio (MSE)
+mse<- mean((actual_values - predictions)^2)
+print(paste("MSE: ", mse))
+
+# La raíz del error cuadrático medio (RMSE)
+rmse <- sqrt(mean((actual_values - predictions)^2))
+print(paste("RMSE:", rmse))
+
+# El error absoluto medio (MAE)
+mae <- mean(abs(actual_values - predictions))
+print(paste("MAE:", mae))
+
+# El coeficiente de determinación (R2)
+SS_Res <- sum((actual_values - predictions)^2)
+SS_Tot <- sum((actual_values - mean(actual_values))^2)
+r_cuadrado <- 1 - (SS_Res / SS_Tot)
+print(paste("R2:", r_cuadrado))
+```
+```{r}
+#Se realizara el knn regresivo
+# Cargando el paquete necesario
+library(class)
+
+
+# Definiendo las variables predictoras y la variable objetivo
+predictors <- hepatitis_norm[, -10]
+target <- hepatitis_norm[, 10]  
+
+
+# Entrenar el modelo KNN Regression
+set.seed(123)
+k <- 5  # Número de vecinos
+knn_model <- knn(train = predictors, test = predictors, cl = target, k = k)
+
+# Puedes usar el modelo para hacer predicciones
+predictions <- as.numeric(knn_model)
+
+
+# Evaluaremos la calidad de las predicciones calculando:
+# El error cuadrático medio (MSE)
+mse<- mean((target - predictions)^2)
+print(paste("MSE: ", mse))
+
+# La raíz del error cuadrático medio (RMSE)
+rmse <- sqrt(mean((target - predictions)^2))
+print(paste("RMSE:", rmse))
+
+# El error absoluto medio (MAE)
+mae <- mean(abs(target - predictions))
+print(paste("MAE:", mae))
+
+# El coeficiente de determinación (R2)
+SS_Res <- sum((target - predictions)^2)
+SS_Tot <- sum((target - mean(target))^2)
+r_cuadrado <- 1 - (SS_Res / SS_Tot)
+print(paste("R2:", r_cuadrado))
+```
+Viendo estos resultados el modelo Random Forest tiene los mejores resultados, pero hay que tener en cuenta que estamos trabajando con un dataset bastante desequilibrado, por lo que se obtienen métricas de alto rendimiento sin realmente predecir el patron de los datos.
+
+A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5, pero esta vez con el dataset reducido, para comprobar si la selección de atributos era necesaria o no.
+
+```{r}
+# Se realiza en primer lugar la regresión lineal
+# La variable dependiente será el sexo y las independientes el resto
+modelo <- lm(sex ~ ., data = hepatitis_reduced_norm)
+
+# Se muestran los coeficientes, p-valores y estadísticas de ajuste:
+summary(modelo)
+
+# El coeficiente de determinación (R2)
+summary_modelo <- summary(modelo)
+print(paste("R2:", summary_modelo$r.squared))
+```
+
+```{r}
+# Cargando la librería randomForest
+library(randomForest)
+
+# Utilizaremos albumin como variable objetivo
+data<-hepatitis_reduced_norm
+
+# Entrenar el modelo Random Forest
+# Supongamos que queremos predecir el consumo de combustible (mpg) usando las otras variables
+set.seed(123)
+rf_model <- randomForest(albumin ~ ., data = hepatitis_reduced_norm)
+
+# Resumen del modelo
+print(rf_model)
+
+# Predicciones en los datos de entrenamiento
+predictions <- predict(rf_model, hepatitis_reduced_norm)
+
+actual_values <- hepatitis_reduced_norm$albumin
+
+# Puedes evaluar la calidad de las predicciones calculando:
+
+# El error cuadrático medio (MSE)
+mse<- mean((actual_values - predictions)^2)
+print(paste("MSE: ", mse))
+
+# La raíz del error cuadrático medio (RMSE)
+rmse <- sqrt(mean((actual_values - predictions)^2))
+print(paste("RMSE:", rmse))
+
+# El error absoluto medio (MAE)
+mae <- mean(abs(actual_values - predictions))
+print(paste("MAE:", mae))
+
+# El coeficiente de determinación (R2)
+SS_Res <- sum((actual_values - predictions)^2)
+SS_Tot <- sum((actual_values - mean(actual_values))^2)
+r_cuadrado <- 1 - (SS_Res / SS_Tot)
+print(paste("R2:", r_cuadrado))
+
+```
+```{r}
+# Se realizara el knn regresivo
+# Cargando el paquete necesario
+library(class)
+
+
+# Definiendo las variables predictoras y la variable objetivo
+predictors <- hepatitis_reduced_norm[, -2]
+target <- hepatitis_reduced_norm[, 2]  
+
+
+# Entrenar el modelo KNN Regression
+set.seed(123)
+k <- 5  # Número de vecinos
+knn_model <- knn(train = predictors, test = predictors, cl = target, k = k)
+
+# Puedes usar el modelo para hacer predicciones
+predictions <- as.numeric(knn_model)
+
+
+# Evaluaremos la calidad de las predicciones calculando:
+# El error cuadrático medio (MSE)
+mse<- mean((target - predictions)^2)
+print(paste("MSE: ", mse))
+
+# La raíz del error cuadrático medio (RMSE)
+rmse <- sqrt(mean((target - predictions)^2))
+print(paste("RMSE:", rmse))
+
+# El error absoluto medio (MAE)
+mae <- mean(abs(target - predictions))
+print(paste("MAE:", mae))
+
+# El coeficiente de determinación (R2)
+SS_Res <- sum((target - predictions)^2)
+SS_Tot <- sum((target - mean(target))^2)
+r_cuadrado <- 1 - (SS_Res / SS_Tot)
+print(paste("R2:", r_cuadrado))
+```
+Vemos como los resultados obtenidos han sido peores que anteriormente, por lo que se puede concluir que no era necesaria la selección de atributos para este ejemplo concreto, aunque es una técnica que si que puede ser de gran utilidad en otros problemas.
+
+
 
 ## Clasificación
 
