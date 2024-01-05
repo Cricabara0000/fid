@@ -1,11 +1,15 @@
 ---
 title: "Análisis de datos hepáticos"
 author: "Julia García Flores, Cristian Antonio Cabello Arango, Paula Yuan César Aguilar, Pablo Santos, Juan María Sojo"
-date: "-08-01-2024"
+date: "08-01-2024"
 output: pdf_document
 ---
 
 ## Lectura del conjunto de datos
+```{r}
+library(dplyr)
+library(ggplot2)
+```
 
 ```{r}
 hepatitis<-read.csv("hepatitis_csv.csv", header = TRUE,sep=",") 
@@ -53,23 +57,21 @@ Observando el dataset, nos damos cuenta de que todas las variables numéricas so
 
 Para poder obtener un análisis más completo de este tipo de datos, decidimos realizar una transformación de variables de categóricas a numéricas discretas, es decir, las variables cuyo resultado sea True pasarán a ser el número 1 y, las variables cuyo resultado sea False, pasarán a ser el número 0. Estos atributos nos permitirán obtener una serie de gráficas más concretas que permitan mostrar la distribución de dichos atributos con otros.
 
+
+
 ```{r}
-num_filas <- nrow(hepatitis)
-num_columnas <- ncol(hepatitis)
-# Recorremos todas las filas y columnas del DataFrame
-  for (i in 1:num_filas) {
-    for (j in 1:num_columnas) {
-      valor <- hepatitis[i, j]  # Obtenemos el valor en la fila 'i' y columna 'j'
-      # Realizamos la transformación: TRUE a 1 y FALSE a 0
-      if (!is.na(valor) && hepatitis[i, j]=="True") {
-        hepatitis[i, j] <- 1
-      }else if(!is.na(valor) && hepatitis[i, j]=="False"){
-        hepatitis[i, j] <- 0
-      }
-    }
-  }
-print(hepatitis)
+#ponemos el sexo de male = 0 y female = 1, los True =1 y False = 0 y live = 1 y die = 0
+hepatitis<-hepatitis%>%
+mutate(steroid=ifelse(steroid=="True",1,0),antivirals=ifelse(antivirals=="True",1,0),fatigue=ifelse(fatigue=="True",1,0),malaise=ifelse(malaise=="True",1,0),anorexia=ifelse(anorexia=="True",1,0),liver_big=ifelse(liver_big=="True",1,0),liver_firm=ifelse(liver_firm=="True",1,0),spleen_palpable=ifelse(spleen_palpable=="True",1,0),spiders=ifelse(spiders=="True",1,0),ascites=ifelse(ascites=="True",1,0),varices=ifelse(varices=="True",1,0),histology=ifelse(histology=="True",1,0))
+hepatitis
 ```
+
+
+```{r}
+str(hepatitis)
+
+```
+
 
 Las variables que han sido transformadas de categóricas a numéricas discretas, a través de la codificación ordinal, son: 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_fig', 'spleen_palpable', 'spiders', 'ascites', 'varices' e 'histology'.
 
@@ -146,12 +148,12 @@ Para el resto de variables, realizaremos un estudio estadístico de los valores 
 
     A continuación, se realizará un recuento de cuántos ejemplos contienen un número uno (son True) y cuántos ejemplos contienen un cero (son False) para rellenar los ejemplos faltantes con el valor que más se repita en cada atributo. Recordamos que las variables que han sido transformadas de categóricas a numéricas discretas son: 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_fig', 'spleen_palpable', 'spiders', 'ascites', 'varices' e 'histology'.
 
+
 ```{r}
 for (variable in variables) {
   cat("Variable:", variable, "\n")
-  tabla <- table(hepatitis[[variable]])
-  cat("Recuento de 0s:", tabla[1], "\n")
-  cat("Recuento de 1s:", tabla[2], "\n\n")
+  cat("Recuento de 0s:", sum(hepatitis[[variable]] == 0 & !is.na(hepatitis[[variable]])), "\n")
+  cat("Recuento de 1s:", sum(hepatitis[[variable]] == 1 & !is.na(hepatitis[[variable]])), "\n\n")
 }
 ```
 
@@ -332,7 +334,8 @@ hepatitis$class <- ifelse(hepatitis$class == 'die', 0, 1)
 hepatitis$sex <- ifelse(hepatitis$sex == 'female', 0, 1)
 
 # Verificar los cambios en 'class' y 'sex'
-head(hepatitis[c('class', 'sex')])
+print(str(hepatitis))
+hepatitis[c('class', 'sex')]
 
 ```
 
@@ -349,8 +352,6 @@ A continuación, se muestra la matriz de correlación y la gráfica que represen
 ```{r}
 #install.packages("corrplot")
 library(corrplot)
-# Convertir todas las variables a tipo numérico
-hepatitis <- sapply(hepatitis, function(x) as.numeric(as.character(x)))
 
 # Verificar la estructura y tipos de datos después de la conversión
 str(hepatitis)
@@ -367,18 +368,18 @@ corrplot(correlation_matrix, method = "color",addCoef.col = "black", tl.col = "b
 
 ```
 
-En principio, podemos deducir que no están muy correlacionadas. Casi todas las variables se encuentran rondando valores menores que 0.5 excepto las variables 'fatigue'-'malaise' y 'malaise'-'anorexia'. Con respecto a la correlación con la variable dependiente (predictora), casi todas las variables presentan mala correlación, porque tienen un valor negativo, debajo de cero, de hecho, las variables 'age', 'fatigue', 'malaise', 'spleen-palpable', 'spiders', 'ascites', 'anorexia', 'varices', 'bilirubin' e 'histology' son los que peores datos presentan pues los valores se acercan a -0.5. Estas variables podrían ser eliminadas porque no muestran resultados significativos con la variable dependiente, además, tampoco muestran evidencias significativas de correlación entre el resto de las variables independientes, sin embargo, como las variables 'fatigue', 'malaise' y 'anorexia' presentan valores altos de correlación, no se deberían eliminar. Además, teniendo en cuenta la distribución de las variables, las variables 'spleen_palpable' y 'varices' están muy desbalanceadas. Recordando la distribución de las variables numéricas discretas y la correlación, en general, de las variables 'antivirals', 'anorexia', 'liver_big' con el resto de variables no presenta resultados significativos. Por ello, se decide eliminar las variables 'age','spleen-palpable', 'spiders', 'ascites', 'varices', 'bilirubin', 'antivirals', 'anorexia', 'liver_big' e 'histology'.
+En principio, podemos deducir que no están muy correlacionadas. Casi todas las variables se encuentran rondando valores menores que 0.5 excepto las variables 'fatigue'-'malaise' y 'malaise'-'anorexia'. Con respecto a la correlación con la variable dependiente (predictora), casi todas las variables presentan una correlación inversa, porque tienen un valor negativo. Hay variables que están muy cercanas a 0 que indica que no existe relación entre las mismas. Éstas son: sgot, liver_firm, liver_big. Estas variables podrían ser eliminadas porque no muestran resultados significativos con la variable dependiente, además, tampoco muestran evidencias signification de correlación entre el resto de las variables independientes.Por ello, se decide eliminar las variables 'sgot','liver_big', 'liver_firm'.
 
 ```{r}
 # Seleccionar las variables que deseas mantener
-hepatitis <- subset(hepatitis, select = -c(age, spleen_palpable, spiders, ascites, varices, bilirubin, antivirals, anorexia, liver_big, histology))
+hepatitis_reduced <- subset(hepatitis, select = -c(sgot, liver_firm, liver_big))
 
 # Verificar la estructura del nuevo conjunto de datos
-str(hepatitis)
-
+str(hepatitis_reduced)
+head(hepatitis_reduced)
 ```
 
-El conjunto de datos se reduce de 19 atributos a 9 atributos en su totalidad. Esta selección de atributos permitirá que los resultados del estudio sean más precisos y fiables.
+El conjunto de datos se reduce de 19 atributos a 16 atributos en su totalidad. Esta selección de atributos permitirá que los resultados del estudio sean más precisos y fiables.
 
 ## Selección de ejemplos
 
@@ -386,8 +387,22 @@ En este caso, como el conjunto de datos presenta un tamaño de 155 atributos. Co
 
 ## Normalización
 
+Hay algunos algoritmos que necesitan de la normalización de los datos, sobre todo en los algortimos relacionados con distancias como puede ser un K-Vecinos más cercanos en clasificación. 
+
+```{r}
+#para ello usaremos la función scale en todas las columnas que contengan valores continuos sobre los dos datasets tanto el reducido por la selección de atributos como el original
+
+hepatitis_norm<-hepatitis%>%
+mutate(age=scale(hepatitis$age),bilirubin=scale(hepatitis$bilirubin),alk_phosphate=scale(hepatitis$alk_phosphate),sgot=scale(hepatitis$sgot),albumin=scale(hepatitis$albumin))
+hepatitis_norm
+```
+
+
 ```{r}
 
+hepatitis_reduced_norm<-hepatitis_reduced%>%
+mutate(age=scale(hepatitis_reduced$age),bilirubin=scale(hepatitis_reduced$bilirubin),alk_phosphate=scale(hepatitis_reduced$alk_phosphate),albumin=scale(hepatitis_reduced$albumin))
+hepatitis_reduced_norm
 ```
 
 ## División del conjunto de datos (K-fold)
@@ -404,8 +419,171 @@ En este caso, como el conjunto de datos presenta un tamaño de 155 atributos. Co
 
 ## Clasificación
 
-```{r}
+En este punto evaluaremos diferentes modelos, dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
+- Algoritmo ZeroR
+- Regresión logística
+- Maquinas de soporte vectorial
+- Random Forest
+- KNN
+Para cada uno de ellos calcularemos las siguientes métricas: 
+- Precisión.
+- Error.
+- AUC.
+- R2.
 
+Mediante estas métricas evaluaremos cuál de los modelos de clasificación proporciona un mejor rendimiento para el dataset del problema, en primer lugar realizaremos esta evaluación con el dataset completo ya preprocesado y con los datos numéricos normalizados.
+
+```{r}
+# Instalar y cargar las librerías necesarias si no están instaladas
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+if (!requireNamespace("e1071", quietly = TRUE)) {
+  install.packages("e1071")
+}
+if (!requireNamespace("randomForest", quietly = TRUE)) {
+  install.packages("randomForest")
+}
+if (!requireNamespace("pROC", quietly = TRUE)) {
+  install.packages("pROC")
+}
+
+library(caret)
+library(e1071)
+library(randomForest)
+library(pROC)
+
+# Convertir la variable objetivo en factor para problemas de clasificación
+hepatitis_norm$class <- as.factor(hepatitis_norm$class)
+
+# Definir el esquema de validación cruzada con k=5
+control <- trainControl(method = "cv", number = 5)
+
+# Lista de modelos de clasificación a probar con validación cruzada
+modelos_clasificacion <- list(
+  "ZeroR" = train(class ~ ., data = hepatitis_norm, method = "knn", trControl = control),
+  "Regresión Logística" = train(class ~ ., data = hepatitis_norm, method = "glm", trControl = control),
+  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_norm, method = "svmRadial", trControl = control),
+  "Random Forest" = train(class ~ ., data = hepatitis_norm, method = "rf", trControl = control),
+  "K Vecinos más cercanos (KNN)" = train(class ~ ., data = hepatitis_norm, method = "knn", trControl = control)
+)
+
+# Función para calcular el R cuadrado
+calculate_r_squared <- function(model, test_data) {
+  predictions <- predict(model, newdata = test_data)
+  rsquared <- cor(predictions, test_data$class)^2
+  return(rsquared)
+}
+
+# Realizar experimentos con cada modelo y almacenar los resultados en un data frame
+resultados_clasificacion <- data.frame(Modelo = character(), 
+                                       Precisión = numeric(), 
+                                       Error = numeric(),
+                                       AUC = numeric(),
+                                       R2 = numeric(),
+                                       stringsAsFactors = FALSE)
+
+for (nombre_modelo in names(modelos_clasificacion)) {
+  modelo <- modelos_clasificacion[[nombre_modelo]]
+  
+  # Precisión (Accuracy) y Error
+  predicciones <- predict(modelo, newdata = hepatitis_norm)
+  accuracy <- mean(predicciones == hepatitis_norm$class)
+  error <- 1 - accuracy
+  
+  # AUC y curva ROC
+    roc_obj <- multiclass.roc(as.factor(hepatitis_norm$class), 
+                              as.numeric(predict(modelo, newdata = hepatitis_norm, type = "raw")))
+    auc <- auc(roc_obj)
+  
+  # R cuadrado
+  rsquared <- cor(as.numeric(as.character(predicciones)), as.numeric(as.character(hepatitis_norm$class)))^2
+  
+  resultados_clasificacion[nombre_modelo, ] <- c(nombre_modelo, accuracy, error, auc, rsquared)
+}
+
+# Mostrar los resultados
+print(resultados_clasificacion)
 ```
+Viendo estos resultados el modelo Random Forest tiene los mejores resultados, unos resultados "perfectos", aunque esto no es así, esto se debe a que, al ser un dataset en el que la clase positiva y la clase negativa están bastante desequilibradas, siempre está prediciendo la clase mayoritaria, obteniendo métricas de alto rendimiento pero sin aprender realmente patrones de los datos.
+Por ello, el modelo que mejor rendimiento presenta para nuestro dataset es el de Máquinas de Vector soporte (SVM).
+
+A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5, pero esta vez con el dataset reducido, para comprobar si ha valido la pena la selección de atributos o si en este caso no era necesario.
+
+```{r}
+# Instalar y cargar las librerías necesarias si no están instaladas
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+if (!requireNamespace("e1071", quietly = TRUE)) {
+  install.packages("e1071")
+}
+if (!requireNamespace("randomForest", quietly = TRUE)) {
+  install.packages("randomForest")
+}
+if (!requireNamespace("pROC", quietly = TRUE)) {
+  install.packages("pROC")
+}
+
+library(caret)
+library(e1071)
+library(randomForest)
+library(pROC)
+
+# Convertir la variable objetivo en factor para problemas de clasificación
+hepatitis_reduced_norm$class <- as.factor(hepatitis_reduced_norm$class)
+
+# Definir el esquema de validación cruzada con k=5
+control <- trainControl(method = "cv", number = 5)
+
+# Lista de modelos de clasificación a probar con validación cruzada
+modelos_clasificacion <- list(
+  "ZeroR" = train(class ~ ., data = hepatitis_reduced_norm, method = "knn", trControl = control),
+  "Regresión Logística" = train(class ~ ., data = hepatitis_reduced_norm, method = "glm", trControl = control),
+  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_reduced_norm, method = "svmRadial", trControl = control),
+  "Random Forest" = train(class ~ ., data = hepatitis_reduced_norm, method = "rf", trControl = control),
+  "K Vecinos más cercanos (KNN)" = train(class ~ ., data = hepatitis_reduced_norm, method = "knn", trControl = control)
+)
+
+# Función para calcular el R cuadrado
+calculate_r_squared <- function(model, test_data) {
+  predictions <- predict(model, newdata = test_data)
+  rsquared <- cor(predictions, test_data$class)^2
+  return(rsquared)
+}
+
+# Realizar experimentos con cada modelo y almacenar los resultados en un data frame
+resultados_clasificacion <- data.frame(Modelo = character(), 
+                                       Precisión = numeric(), 
+                                       Error = numeric(),
+                                       AUC = numeric(),
+                                       R2 = numeric(),
+                                       stringsAsFactors = FALSE)
+
+for (nombre_modelo in names(modelos_clasificacion)) {
+  modelo <- modelos_clasificacion[[nombre_modelo]]
+  
+  # Precisión (Accuracy) y Error
+  predicciones <- predict(modelo, newdata = hepatitis_reduced_norm)
+  accuracy <- mean(predicciones == hepatitis_reduced_norm$class)
+  error <- 1 - accuracy
+  
+  # AUC y curva ROC
+    roc_obj <- multiclass.roc(as.factor(hepatitis_reduced_norm$class), 
+                              as.numeric(predict(modelo, newdata = hepatitis_reduced_norm, type = "raw")))
+    auc <- auc(roc_obj)
+  
+  # R cuadrado
+  rsquared <- cor(as.numeric(as.character(predicciones)), as.numeric(as.character(hepatitis_reduced_norm$class)))^2
+  
+  resultados_clasificacion[nombre_modelo, ] <- c(nombre_modelo, accuracy, error, auc, rsquared)
+}
+
+# Mostrar los resultados
+print(resultados_clasificacion)
+```
+Con el dataset reducido tras la selección de atributos, los resultados son muy parecidos, incluso peores que con el dataset completo para algunos modelos, el Random Forest sigue prediciendo siempre la clase mayoritaria sin aprender realmente patrones de los datos, y el SVM sigue siendo el modelo con mayor precisión, y que evaluando todas las métricas en conjunto mejor rendimiento proporciona para nuestro problema.
+Por lo tanto podemos decir que no merece la pena hacer la selección de atributos y utilizar un dataset reducido para este problema en concreto, aunque es una técnica que si que puede ser de gran utilidad en otros problemas.
+
 
 ## Resultados
