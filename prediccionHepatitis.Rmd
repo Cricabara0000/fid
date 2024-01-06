@@ -2,7 +2,7 @@
 title: "Análisis de datos hepáticos"
 author: "Julia García Flores, Cristian Antonio Cabello Arango, Paula Yuan César Aguilar, Pablo Santos, Juan María Sojo"
 date: "08-01-2024"
-output: pdf_document
+output: html_document
 ---
 
 ## Lectura del conjunto de datos
@@ -81,7 +81,7 @@ Para poder obtener un análisis más completo de este tipo de datos, decidimos r
 #ponemos el sexo de male = 0 y female = 1, los True =1 y False = 0 y live = 1 y die = 0
 hepatitis<-hepatitis%>%
 mutate(steroid=ifelse(steroid=="True",1,0),antivirals=ifelse(antivirals=="True",1,0),fatigue=ifelse(fatigue=="True",1,0),malaise=ifelse(malaise=="True",1,0),anorexia=ifelse(anorexia=="True",1,0),liver_big=ifelse(liver_big=="True",1,0),liver_firm=ifelse(liver_firm=="True",1,0),spleen_palpable=ifelse(spleen_palpable=="True",1,0),spiders=ifelse(spiders=="True",1,0),ascites=ifelse(ascites=="True",1,0),varices=ifelse(varices=="True",1,0),histology=ifelse(histology=="True",1,0))
-hepatitis
+head(hepatitis)
 ```
 
 
@@ -134,6 +134,8 @@ mean_protime <- mean(hepatitis$protime, na.rm = TRUE)
 print(mean_protime)
 ```
 
+
+
 El atributo 'protime' representa el tiempo de protrombina. La protrombina es una proteína producida por el hígado y es fundamental en el proceso de coagulación sanguínea. La prueba del tiempo de protrombina es un examen de sangre que mide el tiempo que tarda la porción líquida de la sangre (plasma) en coagularse. Niveles anormales pueden ser indicativos de enfermedad hepática. El tiempo de protrombina suele estar alrededor de 11 a 13.5 segundos.
 
 Sin embargo, el código anterior representa que el tiempo de protombina medio de 62 segundos, lo que corresponden a valores anormales en todos los ejemplos e indica que todas las pruebas de tiempo de protombina realizadas sobre los pacientes que forman el conjunto de datos no son significativas pues presentan valores anormales en su conjunto, por lo que, a priori, podemos afirmar que este atributo no presenta un impacto significativo en el conjunto de datos y, por ello, puede ser eliminado sin afectar a la información, el análisis e incluso las predicciones del problema.
@@ -179,8 +181,8 @@ Como podemos observar, la mayoría de atributos están representados en casi su 
 
 ```{r}
 # Lista de variables para imputar valores faltantes
-variables <- c('steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_firm',
-               'spleen_palpable', 'spiders', 'ascites', 'varices', 'histology')
+variables <- c('steroid', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_firm',
+               'spleen_palpable', 'spiders', 'ascites', 'varices')
 
 # Bucle para cada variable
 for (variable in variables) {
@@ -208,7 +210,7 @@ Como se puede observar, todos los valores faltantes de las variables numéricas 
 
 ```{r}
 # Lista de variables continuas
-variables_continuas <- c('age', 'bilirubin', 'alk_phosphate', 'sgot', 'albumin')
+variables_continuas <- c('bilirubin', 'alk_phosphate', 'sgot', 'albumin')
 
 # Bucle para calcular la media y la mediana de los valores que no son faltantes
 for (variable_c in variables_continuas) {
@@ -259,7 +261,7 @@ hepatitis$sgot[is.na(hepatitis$sgot)] <- median_sgot
 El conjunto de datos tras esta parte del procesamiento queda resultante de la siguiente manera:
 
 ```{r}
-print(hepatitis)
+head(hepatitis)
 ```
 
 ### Visualización
@@ -352,7 +354,7 @@ hepatitis$sex <- ifelse(hepatitis$sex == 'female', 0, 1)
 
 # Verificar los cambios en 'class' y 'sex'
 print(str(hepatitis))
-hepatitis[c('class', 'sex')]
+head(hepatitis[c('class', 'sex')])
 
 ```
 
@@ -411,7 +413,7 @@ Hay algunos algoritmos que necesitan de la normalización de los datos, sobre to
 
 hepatitis_norm<-hepatitis%>%
 mutate(age=scale(hepatitis$age),bilirubin=scale(hepatitis$bilirubin),alk_phosphate=scale(hepatitis$alk_phosphate),sgot=scale(hepatitis$sgot),albumin=scale(hepatitis$albumin))
-hepatitis_norm
+head(hepatitis_norm[c('age', 'bilirubin','alk_phosphate','sgot','albumin')])
 ```
 
 
@@ -419,7 +421,7 @@ hepatitis_norm
 
 hepatitis_reduced_norm<-hepatitis_reduced%>%
 mutate(age=scale(hepatitis_reduced$age),bilirubin=scale(hepatitis_reduced$bilirubin),alk_phosphate=scale(hepatitis_reduced$alk_phosphate),albumin=scale(hepatitis_reduced$albumin))
-hepatitis_reduced_norm
+head(hepatitis_reduced_norm[c('age', 'bilirubin','alk_phosphate','albumin')])
 ```
 
 ##Clustering
@@ -439,6 +441,7 @@ kMeansHepatitis$cluster
 ```
 ```{r}
 print(kMeansHepatitis)
+
 ```
 
 ```{r}
@@ -483,7 +486,7 @@ En primer lugar realizaremos esta evaluación con el dataset completo ya preproc
 
 # Se realiza en primer lugar la regresión lineal
 # La variable dependiente será el sexo y las independientes el resto
-linearRegresion <- lm(sex ~ ., data = hepatitis_norm)
+modelo <- lm(sex ~ ., data = hepatitis_norm)
 
 # Se muestran los coeficientes, p-valores y estadísticas de ajuste:
 summary(modelo)
