@@ -451,8 +451,7 @@ Como podemos observar, si se agrupan en dos clusters, 98 irian al cluster 1 y 57
 ```{r}
 #para evaluar los modelos dividiremos nuestros datos en dos conjuntos
 # Convertir la variable objetivo en factor para problemas de clasificación
-set.seed(23)
-hepatitis_norm$class <- as.factor(hepatitis_norm$class)
+
 hepatitis_norm_split<-createDataPartition(hepatitis_norm$class, p=0.80, list = FALSE)
 trainingSetNorm <- hepatitis_norm[hepatitis_norm_split,]
 testSetNorm <- hepatitis_norm[-hepatitis_norm_split,]
@@ -465,12 +464,13 @@ head(testSetNorm)
 
 ## Regresión
 
+En este apartado pondremos a prueba si se podría predecir el valor de la albumina en funcion de las variables existentes (sin la clase)
+
 En este punto evaluaremos la capacidad de diferentes modelos de precedir valores a partir de datos previos, que serán tomados dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
 - Regresión lineal
 - Random Forest
 - KNN regresivo
 Para cada uno de ellos calcularemos las siguientes métricas: 
-- El error cuadrático medio.
 - La raíz del error cuadrático medio.
 - El error absoluto medio.
 - R2.
@@ -483,7 +483,7 @@ En primer lugar realizaremos esta evaluación con el dataset completo ya preproc
 
 # Se realiza en primer lugar la regresión lineal
 # La variable dependiente será el sexo y las independientes el resto
-modelo <- lm(sex ~ ., data = hepatitis_norm)
+linearRegresion <- lm(sex ~ ., data = hepatitis_norm)
 
 # Se muestran los coeficientes, p-valores y estadísticas de ajuste:
 summary(modelo)
@@ -694,18 +694,19 @@ Mediante estas métricas evaluaremos cuál de los modelos de clasificación prop
 
 
 ```{r}
-
+set.seed(123)
+hepatitis_norm$class <- as.factor(hepatitis_norm$class)
 
 
 # Definir el esquema de validación cruzada con k=5
-control <- trainControl(method = "cv", number = 5)
+control <- trainControl(method = "cv", number = 5, summaryFunction = multiClassSummary)
 
 
 modelos_clasificacion <- list(
-   "Red neuronal" = train(class ~ ., data=trainingSetNorm, method ="nnet",trControl=control),
-  "Regresión Logística" = train(class ~ ., data = trainingSetNorm, method = "glm", trControl = control, family=binomial),
-  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = trainingSetNorm, method = "svmRadial", trControl = control),
-  "Random Forest" = train(class ~ ., data = trainingSetNorm, method = "rf", trControl = control)
+   "Red neuronal" = train(class ~ ., data=hepatitis_norm, method ="nnet",trControl=control,metric = "Specificity"),
+  "Regresión Logística" = train(class ~ ., data = hepatitis_norm, method = "glm", trControl = control, family=binomial, metric = "Specificity"),
+  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_norm, method = "svmRadial", trControl = control, metric = "Specificity"),
+  "Random Forest" = train(class ~ ., data = hepatitis_norm, method = "rf", trControl = control, metric = "Specificity")
 )
 
 
@@ -721,23 +722,24 @@ resultados_clasificacion <- data.frame(Accuracy = numeric(),
 for (nombre_modelo in names(modelos_clasificacion)) {
   tiempo_inicial <- Sys.time()
   modelo <- modelos_clasificacion[[nombre_modelo]]
-  predicciones <- predict(modelo, newdata = testSetNorm)
+
+  predicciones <- predict(modelo, newdata = hepatitis_norm)
   #matriz de confusion 
-  matrizConfusion <- confusionMatrix(predicciones, testSetNorm$class)
+  matrizConfusion <- confusionMatrix(predicciones, hepatitis_norm$class)
   print(matrizConfusion)
   #metricas
   accuracy <- matrizConfusion$overall["Accuracy"]
   error <- 1 - accuracy
   precision <- matrizConfusion$byClass["Sensitivity"]
   especificidad <- matrizConfusion$byClass["Specificity"]
-  
-   roc_obj <- roc(testSetNorm$class,
-                              as.numeric(predict(modelo, newdata = testSetNorm, type = "raw")))
+
+   roc_obj <- roc(hepatitis_norm$class,
+                              as.numeric(predict(modelo, newdata = hepatitis_norm, type = "raw")))
     auc <- auc(roc_obj)
-  
+
   tiempo_final <- Sys.time()
   duracion <- tiempo_final - tiempo_inicial
-  
+
   plot(roc_obj, col = "blue", lwd = 2, main = paste("Curva ROC", nombre_modelo))
   
   resultados_clasificacion[nombre_modelo, ] <- c(accuracy, precision, error, especificidad, auc, duracion)
@@ -751,23 +753,21 @@ print(resultados_clasificacion)
 
 
 
-
 ```{r}
 #probamos knn con varios valores de k
 valores <- expand.grid(k = seq(3, 15, 2)) 
 
-ajustes <- trainControl(method = 'cv', number = 5)
 
 # Aplica el método seleccionando el valor óptimo de k
 knnClasification <- train(class ~ .,
       data = hepatitis_norm,
       method = 'knn',
       tuneGrid = valores,
-      trControl = ajustes)
+      trControl = control)
 knnClasification
 ```
 ```{r}
-plot(knnClasification)
+plot(knnClasification, metric = "Specificity")
 ```
 
 
@@ -781,54 +781,51 @@ A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto 
 # Convertir la variable objetivo en factor para problemas de clasificación
 hepatitis_reduced_norm$class <- as.factor(hepatitis_reduced_norm$class)
 
-# Definir el esquema de validación cruzada con k=5
-control <- trainControl(method = "cv", number = 5)
-
-# Lista de modelos de clasificación a probar con validación cruzada
-modelos_clasificacion <- list(
-  "ZeroR" = train(class ~ ., data = hepatitis_reduced_norm, method = "knn", trControl = control),
-  "Regresión Logística" = train(class ~ ., data = hepatitis_reduced_norm, method = "glm", trControl = control),
-  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_reduced_norm, method = "svmRadial", trControl = control),
-  "Random Forest" = train(class ~ ., data = hepatitis_reduced_norm, method = "rf", trControl = control),
-  "K Vecinos más cercanos (KNN)" = train(class ~ ., data = hepatitis_reduced_norm, method = "knn", trControl = control)
+modelos_clasificacion_reduced <- list(
+   "Red neuronal" = train(class ~ ., data=hepatitis_reduced_norm, method ="nnet",trControl=control,metric = "Specificity"),
+  "Regresión Logística" = train(class ~ ., data = hepatitis_reduced_norm, method = "glm", trControl = control, family=binomial, metric = "Specificity"),
+  "Máquinas de Vector de Soporte (SVM)" = train(class ~ ., data = hepatitis_reduced_norm, method = "svmRadial", trControl = control, metric = "Specificity"),
+  "Random Forest" = train(class ~ ., data = hepatitis_reduced_norm, method = "rf", trControl = control, metric = "Specificity")
 )
 
-# Función para calcular el R cuadrado
-calculate_r_squared <- function(model, test_data) {
-  predictions <- predict(model, newdata = test_data)
-  rsquared <- cor(predictions, test_data$class)^2
-  return(rsquared)
-}
 
 # Realizar experimentos con cada modelo y almacenar los resultados en un data frame
-resultados_clasificacion <- data.frame(Modelo = character(), 
-                                       Precisión = numeric(), 
+resultados_clasificacion_reduced <- data.frame(Accuracy = numeric(), 
+                                       Precision = numeric(),
                                        Error = numeric(),
+                                       Especificiad = numeric(),
                                        AUC = numeric(),
-                                       R2 = numeric(),
+                                       Duracion = numeric(),
                                        stringsAsFactors = FALSE)
 
-for (nombre_modelo in names(modelos_clasificacion)) {
-  modelo <- modelos_clasificacion[[nombre_modelo]]
-  
-  # Precisión (Accuracy) y Error
+for (nombre_modelo_reduced in names(modelos_clasificacion_reduced)) {
+  tiempo_inicial <- Sys.time()
+  modelo <- modelos_clasificacion_reduced[[nombre_modelo_reduced]]
+
   predicciones <- predict(modelo, newdata = hepatitis_reduced_norm)
-  accuracy <- mean(predicciones == hepatitis_reduced_norm$class)
+  #matriz de confusion 
+  matrizConfusion <- confusionMatrix(predicciones, hepatitis_reduced_norm$class)
+  print(matrizConfusion)
+  #metricas
+  accuracy <- matrizConfusion$overall["Accuracy"]
   error <- 1 - accuracy
-  
-  # AUC y curva ROC
-    roc_obj <- multiclass.roc(as.factor(hepatitis_reduced_norm$class), 
+  precision <- matrizConfusion$byClass["Sensitivity"]
+  especificidad <- matrizConfusion$byClass["Specificity"]
+
+   roc_obj <- roc(hepatitis_reduced_norm$class,
                               as.numeric(predict(modelo, newdata = hepatitis_reduced_norm, type = "raw")))
     auc <- auc(roc_obj)
+
+  tiempo_final <- Sys.time()
+  duracion <- tiempo_final - tiempo_inicial
+
+  plot(roc_obj, col = "blue", lwd = 2, main = paste("Curva ROC", nombre_modelo))
   
-  # R cuadrado
-  rsquared <- cor(as.numeric(as.character(predicciones)), as.numeric(as.character(hepatitis_reduced_norm$class)))^2
-  
-  resultados_clasificacion[nombre_modelo, ] <- c(nombre_modelo, accuracy, error, auc, rsquared)
+  resultados_clasificacion_reduced[nombre_modelo_reduced, ] <- c(accuracy, precision, error, especificidad, auc, duracion)
 }
 
 # Mostrar los resultados
-print(resultados_clasificacion)
+print(resultados_clasificacion_reduced)
 ```
 Con el dataset reducido tras la selección de atributos, los resultados son muy parecidos, incluso peores que con el dataset completo para algunos modelos, el Random Forest sigue prediciendo siempre la clase mayoritaria sin aprender realmente patrones de los datos, y el SVM sigue siendo el modelo con mayor precisión, y que evaluando todas las métricas en conjunto mejor rendimiento proporciona para nuestro problema.
 Por lo tanto podemos decir que no merece la pena hacer la selección de atributos y utilizar un dataset reducido para este problema en concreto, aunque es una técnica que si que puede ser de gran utilidad en otros problemas.
