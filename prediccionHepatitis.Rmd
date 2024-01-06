@@ -4,6 +4,10 @@ author: "Julia García Flores, Cristian Antonio Cabello Arango, Paula Yuan Césa
 date: "08-01-2024"
 output: html_document
 ---
+# Hepatitis
+
+La hepatitis es una inflamación del hígado que puede ser causada por diversos factores, como infecciones virales, consumo de alcohol, drogas, toxinas, o incluso como resultado de trastornos autoinmunes. En función de la gravedad se clasifican en distintos tipos: A, B, C, D, E, G aunque las mas comunes son la A, B y C. De acuerdo con datos de la Organización Mundial de la Salud (OMS), alrededor de 1,2 millones de personas murieron a causa de hepatitis aguda o alguna de sus secuelas (cáncer o cirrosis) en 2019.
+
 
 ## Lectura del conjunto de datos
 ```{r}
@@ -166,7 +170,7 @@ Para el resto de variables, realizaremos un estudio estadístico de los valores 
 
     ```
 
-    A continuación, se realizará un recuento de cuántos ejemplos contienen un número uno (son True) y cuántos ejemplos contienen un cero (son False) para rellenar los ejemplos faltantes con el valor que más se repita en cada atributo. Recordamos que las variables que han sido transformadas de categóricas a numéricas discretas son: 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_fig', 'spleen_palpable', 'spiders', 'ascites', 'varices' e 'histology'.
+A continuación, se realizará un recuento de cuántos ejemplos contienen un número uno (son True) y cuántos ejemplos contienen un cero (son False) para rellenar los ejemplos faltantes con el valor que más se repita en cada atributo. Recordamos que las variables que han sido transformadas de categóricas a numéricas discretas son: 'steroid', 'antivirals', 'fatigue', 'malaise', 'anorexia', 'liver_big', 'liver_fig', 'spleen_palpable', 'spiders', 'ascites', 'varices' e 'histology'.
 
 
 ```{r}
@@ -678,7 +682,7 @@ Vemos como los resultados obtenidos han sido peores que anteriormente, por lo qu
 
 ## Clasificación
 
-En este punto evaluaremos diferentes modelos, dividiendo el conjunto mediante validación cruzada con k = 5 y en dos conjuntos (training-test) ,los modelos evaluados serán los siguientes: 
+En este punto evaluaremos diferentes modelos, dividiendo el conjunto mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
 - Red neuronal
 - Regresión logística
 - Maquinas de soporte vectorial
@@ -753,7 +757,7 @@ print(resultados_clasificacion)
 ```
 
 
-
+A continuación, vamos a probar con el algoritmo KNN para ver su rendimiento en función el número de vecinos que se le asigne:
 
 
 ```{r}
@@ -766,6 +770,7 @@ knnClasification <- train(class ~ .,
       data = hepatitis_norm,
       method = 'knn',
       tuneGrid = valores,
+      metric = "Specificity",
       trControl = control)
 knnClasification
 ```
