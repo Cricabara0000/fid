@@ -431,7 +431,7 @@ En primer lugar realizaremos esta evaluación con el dataset completo ya preproc
 
 # Se realiza en primer lugar la regresión lineal
 # La variable dependiente será el sexo y las independientes el resto
-modelo <- lm(sex ~ ., data = hepatitis_norm)
+modelo <- lm(albumin ~ ., data = hepatitis_norm)
 
 # Se muestran los coeficientes, p-valores y estadísticas de ajuste:
 summary(modelo)
@@ -489,8 +489,8 @@ library(class)
 
 
 # Definiendo las variables predictoras y la variable objetivo
-predictors <- hepatitis_norm[, -10]
-target <- hepatitis_norm[, 10]  
+predictors <- hepatitis_norm[, -4]
+target <- hepatitis_norm[, 4]  
 
 
 # Entrenar el modelo KNN Regression
@@ -528,7 +528,7 @@ A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto 
 ```{r}
 # Se realiza en primer lugar la regresión lineal
 # La variable dependiente será el sexo y las independientes el resto
-modelo <- lm(sex ~ ., data = hepatitis_reduced_norm)
+modelo <- lm(albumin ~ ., data = hepatitis_reduced_norm)
 
 # Se muestran los coeficientes, p-valores y estadísticas de ajuste:
 summary(modelo)
@@ -586,8 +586,8 @@ library(class)
 
 
 # Definiendo las variables predictoras y la variable objetivo
-predictors <- hepatitis_reduced_norm[, -2]
-target <- hepatitis_reduced_norm[, 2]  
+predictors <- hepatitis_reduced_norm[,-4]
+target <- hepatitis_reduced_norm[,4]
 
 
 # Entrenar el modelo KNN Regression
