@@ -1,6 +1,6 @@
 ---
 title: "Análisis de datos hepáticos"
-author: "Julia García Flores, Cristian Antonio Cabello Arango, Paula Yuan César Aguilar, Pablo Santos, Juan María Sojo"
+author: "Julia García Flores, Cristian Antonio Cabello Arango, Paula Yuan César Aguilar, Pablo Santos Alises, Juan María Sojo López"
 date: "08-01-2024"
 output: html_document
 ---
@@ -466,18 +466,14 @@ testSetNorm <- hepatitis_norm[-hepatitis_norm_split,]
 head(testSetNorm)
 ```
 
-
-
-
 ## Regresión
-
-En este apartado pondremos a prueba si se podría predecir el valor de la albumina en funcion de las variables existentes (sin la clase)
 
 En este punto evaluaremos la capacidad de diferentes modelos de precedir valores a partir de datos previos, que serán tomados dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
 - Regresión lineal
 - Random Forest
 - KNN regresivo
 Para cada uno de ellos calcularemos las siguientes métricas: 
+- El error cuadrático medio.
 - La raíz del error cuadrático medio.
 - El error absoluto medio.
 - R2.
@@ -490,7 +486,7 @@ En primer lugar realizaremos esta evaluación con el dataset completo ya preproc
 
 # Se realiza en primer lugar la regresión lineal
 # La variable dependiente será el sexo y las independientes el resto
-modelo <- lm(sex ~ ., data = hepatitis_norm)
+modelo <- lm(albumin ~ ., data = hepatitis_norm)
 
 # Se muestran los coeficientes, p-valores y estadísticas de ajuste:
 summary(modelo)
@@ -548,8 +544,8 @@ library(class)
 
 
 # Definiendo las variables predictoras y la variable objetivo
-predictors <- hepatitis_norm[, -10]
-target <- hepatitis_norm[, 10]  
+predictors <- hepatitis_norm[, -4]
+target <- hepatitis_norm[, 4]  
 
 
 # Entrenar el modelo KNN Regression
@@ -587,7 +583,7 @@ A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto 
 ```{r}
 # Se realiza en primer lugar la regresión lineal
 # La variable dependiente será el sexo y las independientes el resto
-modelo <- lm(sex ~ ., data = hepatitis_reduced_norm)
+modelo <- lm(albumin ~ ., data = hepatitis_reduced_norm)
 
 # Se muestran los coeficientes, p-valores y estadísticas de ajuste:
 summary(modelo)
@@ -645,8 +641,8 @@ library(class)
 
 
 # Definiendo las variables predictoras y la variable objetivo
-predictors <- hepatitis_reduced_norm[, -2]
-target <- hepatitis_reduced_norm[, 2]  
+predictors <- hepatitis_reduced_norm[,-4]
+target <- hepatitis_reduced_norm[,4]
 
 
 # Entrenar el modelo KNN Regression
@@ -679,24 +675,38 @@ print(paste("R2:", r_cuadrado))
 ```
 Vemos como los resultados obtenidos han sido peores que anteriormente, por lo que se puede concluir que no era necesaria la selección de atributos para este ejemplo concreto, aunque es una técnica que si que puede ser de gran utilidad en otros problemas.
 
-
 ## Clasificación
 
+Los modelos de clasificación son algoritmos que se utilizan para predecir a qué categoría o clase pertenecerá una instancia basándose en sus características o atributos. Estos modelos se entrenan con datos históricos con ejemplos de instancias y sus respectivas etiquetas de clase.
+
 En este punto evaluaremos diferentes modelos, dividiendo el conjunto mediante validación cruzada con k = 5,los modelos evaluados serán los siguientes: 
-- Red neuronal
-- Regresión logística
-- Maquinas de soporte vectorial
-- Random Forest
-- KNN
+
+- Red neuronal: imita la estructura del cerebro. Consiste en nodos conectados con pesos ajustables. Toma entradas, realiza cálculos ponderados y produce salidas para clasificar datos. Durante el entrenamiento, ajusta los pesos para mejorar las predicciones
+
+- Regresión logística: aunque su nombre incluye la palabra "regresión", la regresión logística se utiliza para problemas de clasificación binaria. Estima la probabilidad de que una instancia pertenezca a una clase particular y asigna la clase con la probabilidad más alta. Es un modelo lineal que utiliza la función logística para transformar la salida. 
+
+- Maquinas de soporte vectorial(SVM): son modelos que buscan encontrar el hiperplano óptimo que mejor separa las instancias de diferentes clases en un espacio multidimensional. Pueden manejar problemas de clasificación lineal y no lineal.
+
+- Random Forest: es un modelo de ensamble que combina múltiples árboles de decisión para mejorar la precisión y reducir el sobreajuste. Cada árbol se entrena con una muestra aleatoria de datos y realiza una predicción. La predicción final se obtiene mediante la votación de los árboles.  
+
+- KNN: es un algoritmo simple que clasifica una instancia basándose en la mayoría de las clases de sus k vecinos más cercanos en el espacio de características. La elección del valor de k afecta la sensibilidad del modelo a los detalles locales y al ruido en los datos.
+
 Para cada uno de ellos calcularemos las siguientes métricas: 
-- Accuracy.
-- Precisión.
-- Error.
-- AUC.
-- Especificidad.
+
+- Accuracy: Mide la proporción de predicciones correctas sobre el total de predicciones. Se calcula como (Verdaderos Positivos + Verdaderos Negativos) / Total. Indica la precisión general del modelo.
+
+- Precisión: es una métrica que indica la proporción de instancias positivas clasificadas correctamente respecto a todas las positivas. Especifica la exactitud de las predicciones positivas.
+
+- Error: mide la proporción de instancias mal clasificadas en relación con el total de instancias. Es la cantidad de predicciones incorrectas dividida por el número total de predicciones.
+
+- AUC: mide la capacidad de un modelo de clasificación para distinguir entre clases asignando una puntuación más alta a las instancias positivas que a las negativas. Especifica la capacidad del modelo para clasificar correctamente las instancias en términos de sus probabilidades de pertenencia a una clase. 
+
+- Especificidad: mide la proporción de instancias negativas que el modelo clasifica correctamente. Se calcula como Verdaderos Negativos / (Verdaderos Negativos + Falsos Positivos)
 
 En datasets desbalanceados como en el que nos encontramos, el accuracy puede ser engañoso, ya que un modelo que predice siempre la clase mayoritaria podría tener un accuracy alto sin ser realmente útil, por eso hemos añadido la precisión que mide la exactitud de las predicciones positivas y la especifidad que indica qué proporción de las instancias que realmente son negativas fueron correctamente identificadas como negativas por el modelo.
+
 Hay que tener en cuenta que el AUC se calcula si el algoritmo proporciona probabilidades, que es el caso de todos los nuestros.
+
 Mediante estas métricas evaluaremos cuál de los modelos de clasificación proporciona un mejor rendimiento para el dataset del problema, en primer lugar realizaremos esta evaluación con el dataset completo ya preprocesado y con los datos numéricos normalizados.
 
 
@@ -779,8 +789,15 @@ plot(knnClasification, metric = "Specificity")
 ```
 
 
-Viendo estos resultados el modelo Random Forest tiene los mejores resultados, unos resultados "perfectos", aunque esto no es así, esto se debe a que, al ser un dataset en el que la clase positiva y la clase negativa están bastante desequilibradas, siempre está prediciendo la clase mayoritaria, obteniendo métricas de alto rendimiento pero sin aprender realmente patrones de los datos.
-Por ello, el modelo que mejor rendimiento presenta para nuestro dataset es el de Máquinas de Vector soporte (SVM).
+Viendo estos resultados el modelo Random Forest tiene los mejores resultados para el dataset de nuestro problema, esto se puede deber a varias razones, entre ellas nos gustaría destacar las siguientes: 
+
+- Random Forest mitiga el problema del sobreajuste al promediar las predicciones de varios árboles, lo que proporciona un modelo más robusto y generalizable.
+
+- En datasets pequeños, como es nuestro caso, la variabilidad en los resultados puede ser alta. Random Forest reduce la varianza al combinar múltiples árboles, lo que puede estabilizar las predicciones y hacer que el modelo sea más confiable.
+
+- Random Forest puede manejar conjuntos de datos con un número relativamente bajo de ejemplos y características de manera efectiva. 
+
+- Random Forest no es dependiente de grandes cantidades de datos, algunos modelos más avanzados, como las redes neuronales, pueden requerir grandes cantidades de datos para aprender patrones complejos de manera efectiva. Random Forest es más versátil en este sentido y puede proporcionar buenos resultados con conjuntos de datos más pequeños.
 
 A continuación evaluaremos los mismos modelos, de nuevo dividiendo el conjunto de entrenamiento mediante validación cruzada con k = 5, pero esta vez con el dataset reducido, para comprobar si ha valido la pena la selección de atributos o si en este caso no era necesario.
 
@@ -835,7 +852,8 @@ for (nombre_modelo_reduced in names(modelos_clasificacion_reduced)) {
 # Mostrar los resultados
 print(resultados_clasificacion_reduced)
 ```
-Con el dataset reducido tras la selección de atributos, los resultados son muy parecidos, incluso peores que con el dataset completo para algunos modelos, el Random Forest sigue prediciendo siempre la clase mayoritaria sin aprender realmente patrones de los datos, y el SVM sigue siendo el modelo con mayor precisión, y que evaluando todas las métricas en conjunto mejor rendimiento proporciona para nuestro problema.
+Con el dataset reducido tras la selección de atributos, los resultados son muy parecidos, sin ninguna diferencia significativa con las pruebas llevadas a cabo que con el dataset completo, el modelo Random Forest sigue siendo el modelo que mejor resultados nos proporciona y que por tanto deberíamos elegir para llevar a cabo clasificación en nuestro problema.
+
 Por lo tanto podemos decir que no merece la pena hacer la selección de atributos y utilizar un dataset reducido para este problema en concreto, aunque es una técnica que si que puede ser de gran utilidad en otros problemas.
 
 
